@@ -23,7 +23,7 @@ app.use(urlencoded({ extended: false }));
 // Default Route
 app.get("/", (req, res) => {
   return successResMsg(res, 200, {
-    message: "Lannister Pay Test API",
+    msg: "Lannister Pay Test API",
   });
 });
 
