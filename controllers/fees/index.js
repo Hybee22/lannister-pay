@@ -1,3 +1,4 @@
+import fs from "fs";
 import redisKeys from "../../redis/key-gen.js";
 import { errorResMsg, successResMsg } from "../../utilities/response.js";
 import parseFCS from "../../utilities/parseFCS.js";
@@ -15,6 +16,11 @@ class FeesController {
       const data = parseFCS(FeeConfigurationSpec);
       // Generate a key to save the stringified configuration objects
       const keyId = redisKeys.getHashKey(`config`);
+
+      // Save to File
+      fs.writeFile("fee-config.json", JSON.stringify(data), (err) => {
+        if (err) logger.error(err);
+      });
 
       // Set Config Data in Redis store
       await cache.set(keyId, data);
@@ -42,45 +48,53 @@ class FeesController {
 
       const keyId = redisKeys.getHashKey(`config`);
 
-      const configArr = await cache.get(keyId);
-      if (!configArr) {
-        return errorResMsg(res, 400, {
-          message: "No fee configurations found",
+      let configArr;
+
+      fs.readFile("fee-config.json", async (err, data) => {
+        if (err) {
+          configArr = await cache.get(keyId);
+        }
+        configArr = JSON.parse(data);
+
+        if (!configArr) {
+          return errorResMsg(res, 400, {
+            message: "No fee configurations found",
+          });
+        }
+
+        let LOCALE;
+        if (CurrencyCountry === Country) {
+          LOCALE = "LOCL";
+        } else {
+          LOCALE = "INTL";
+        }
+
+        const applied = appliedFeeValue(configArr, Amount, {
+          TYPE: Type,
+          BRAND: Brand,
+          LOCALE: LOCALE,
+          CURRENCY: Currency,
         });
-      }
 
-      let LOCALE;
-      if (CurrencyCountry === Country) {
-        LOCALE = "LOCL";
-      } else {
-        LOCALE = "INTL";
-      }
+        if (applied?.message?.length > 0) {
+          return errorResMsg(res, 400, { Error: applied?.message });
+        }
 
-      const applied = appliedFeeValue(configArr, Amount, {
-        TYPE: Type,
-        BRAND: Brand,
-        LOCALE: LOCALE,
-        CURRENCY: Currency,
-      });
+        let ChargeAmount;
+        if (BearsFee === true) {
+          ChargeAmount = Amount + applied?.appliedFee;
+        } else {
+          ChargeAmount = Amount;
+        }
 
-      if (applied?.message?.length > 0) {
-        return errorResMsg(res, 400, { Error: applied?.message });
-      }
+        const SettlementAmount = ChargeAmount - applied?.appliedFee;
 
-      let ChargeAmount;
-      if (BearsFee === true) {
-        ChargeAmount = Amount + applied?.appliedFee;
-      } else {
-        ChargeAmount = Amount;
-      }
-
-      const SettlementAmount = ChargeAmount - applied?.appliedFee;
-
-      return successResMsg(res, 200, {
-        AppliedFeeId: applied?.feeId,
-        AppliedFeeIdValue: Math.round(applied?.appliedFee),
-        ChargeAmount,
-        SettlementAmount,
+        return successResMsg(res, 200, {
+          AppliedFeeId: applied?.feeId,
+          AppliedFeeIdValue: Math.round(applied?.appliedFee),
+          ChargeAmount,
+          SettlementAmount,
+        });
       });
     } catch (error) {
       console.log(error);
