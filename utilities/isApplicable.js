@@ -4,20 +4,24 @@ const isApplicable = (configArr, props) => {
   const arr = [];
   configArr.forEach((config) => {
     if (
-      config["FEE-ENTITY-TYPE"] === (props["TYPE"] || "*") &&
-      config["FEE-ENTITY-PROP"] === "*"
+      config["FEE-ENTITY-TYPE"] === props["TYPE"] ||
+      config["FEE-ENTITY-TYPE"] === "*"
     ) {
-      arr.push(config);
-    }
-    if (
-      config["FEE-ENTITY-TYPE"] === (props["TYPE"] || "*") &&
-      config["FEE-ENTITY-PROP"] !== "*"
-    ) {
-      arr.push(config);
+      return arr.push(config);
     }
   });
 
-  return arr.sort(compare);
+  const data = arr.map((config) => {
+    if (
+      (config["FEE-ENTITY-TYPE"] === props["TYPE"] &&
+        config["FEE-ENTITY-PROPERTY"] === props["BRAND"]) ||
+      config["FEE-ENTITY-PROPERTY"] === "*"
+    ) {
+      return config;
+    }
+  });
+
+  return data.sort(compare);
 };
 
 export default isApplicable;

@@ -7,7 +7,6 @@
  */
 const errorResMsg = (res, code, message) =>
   res.status(code).json({
-    status: "error",
     ...message,
   });
 

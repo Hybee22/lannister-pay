@@ -33,14 +33,23 @@ class FeesController {
     try {
       const {
         Amount,
+        Currency,
+        CurrencyCountry,
         Customer: { BearsFee },
         PaymentEntity,
       } = req.body;
-      const { Type } = PaymentEntity;
+      const { Type, Brand, Country } = PaymentEntity;
 
       const keyId = redisKeys.getHashKey(`config`);
 
       const configArr = await cache.get(keyId);
+
+      let LOCALE;
+      if (CurrencyCountry === Country) {
+        LOCALE = "LOCL";
+      } else {
+        LOCALE = "INTL";
+      }
 
       if (!configArr) {
         return errorResMsg(res, 400, {
@@ -48,28 +57,36 @@ class FeesController {
         });
       }
 
-      const { appliedFee, feeId } = appliedFeeValue(configArr, Amount, {
+      const applied = appliedFeeValue(configArr, Amount, {
         TYPE: Type,
+        BRAND: Brand,
+        LOCALE: LOCALE,
+        CURRENCY: Currency,
       });
+
+      if (applied?.message?.length > 0) {
+        return errorResMsg(res, 400, { Error: applied?.message });
+      }
 
       let ChargeAmount;
       if (BearsFee === true) {
-        ChargeAmount = Amount + appliedFee;
+        ChargeAmount = Amount + applied?.appliedFee;
       } else {
         ChargeAmount = Amount;
       }
 
-      const SettlementAmount = ChargeAmount - appliedFee;
+      const SettlementAmount = ChargeAmount - applied?.appliedFee;
 
       return successResMsg(res, 200, {
-        AppliedFeeId: feeId,
-        AppliedFeeIdValue: appliedFee,
+        AppliedFeeId: applied?.feeId,
+        AppliedFeeIdValue: Math.round(applied?.appliedFee),
         ChargeAmount,
         SettlementAmount,
       });
     } catch (error) {
+      console.log(error);
       logger.error(error);
-      await cache.flushAll();
+      //   await cache.flushAll();
       return errorResMsg(res, 500, {
         message: "Something went wrong while computing transaction fee",
       });

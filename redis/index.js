@@ -11,14 +11,20 @@ const logger = Logger;
 bluebird.promisifyAll(redis);
 
 // Create a client and connect to Redis using configuration from env
-const clientConfig = {
+let clientConfig = {
   host: process.env.LANNISTER_REDIS_HOST,
   port: process.env.LANISTER_REDIS_PORT,
 };
 
-// if (process.env.LANNISTER_REDIS_PASSWORD !== "null") {
-//   clientConfig.password = process.env.LANNISTER_REDIS_PASSWORD;
-// }
+if (process.env.LANNISTER_REDIS_PASSWORD !== "null") {
+  clientConfig.password = process.env.LANNISTER_REDIS_PASSWORD;
+}
+
+if (process.env.NODE_ENV === "production") {
+  clientConfig = {
+    url: process.env.LANNISTER_REDIS_LIVE_HOST,
+  };
+}
 
 const client = createClient(clientConfig);
 

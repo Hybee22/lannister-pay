@@ -1,27 +1,50 @@
 import isApplicable from "./isApplicable.js";
 
 const appliedFeeValue = (configArr, transactionAmount, prop) => {
-  console.log(configArr);
-  const config = isApplicable(configArr, prop)[0];
-  const feeId = config["FEE-ID"];
+  const config = isApplicable(configArr, prop);
 
-  if (config["FEE-TYPE"] === "PERC") {
+  const { CURRENCY } = prop;
+
+  if (config.length === 0) {
     return {
-      appliedFee: (config["FEE-VALUE"] / 100) * transactionAmount,
-      feeId,
+      appliedFee: "",
+      feeId: "",
+      message: "No applicable configuration",
     };
   }
-  if (config["FEE-TYPE"] === "FLAT") {
+
+  const selectedConfig = config[0];
+
+  if (selectedConfig["FEE-CURRENCY"] !== CURRENCY) {
     return {
-      appliedFee: config["FEE-VALUE"],
-      feeId,
+      appliedFee: "",
+      feeId: "",
+      message: `No fee configuration for ${CURRENCY} transactions.`,
     };
   }
-  if (config["FEE-TYPE"] === "FLAT_PERC") {
-    const [flat, perc] = config["FEE-VALUE"];
+
+  const feeId = selectedConfig["FEE-ID"];
+
+  if (selectedConfig["FEE-TYPE"] === "PERC") {
+    return {
+      appliedFee: (selectedConfig["FEE-VALUE"] / 100) * transactionAmount,
+      feeId,
+      message: "",
+    };
+  }
+  if (selectedConfig["FEE-TYPE"] === "FLAT") {
+    return {
+      appliedFee: selectedConfig["FEE-VALUE"],
+      feeId,
+      message: "",
+    };
+  }
+  if (selectedConfig["FEE-TYPE"] === "FLAT_PERC") {
+    const [flat, perc] = selectedConfig["FEE-VALUE"];
     return {
       appliedFee: flat + (perc / 100) * transactionAmount,
       feeId,
+      message: "",
     };
   }
 };
