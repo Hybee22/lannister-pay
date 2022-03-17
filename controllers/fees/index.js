@@ -43,18 +43,17 @@ class FeesController {
       const keyId = redisKeys.getHashKey(`config`);
 
       const configArr = await cache.get(keyId);
+      if (!configArr) {
+        return errorResMsg(res, 400, {
+          message: "No fee configurations found",
+        });
+      }
 
       let LOCALE;
       if (CurrencyCountry === Country) {
         LOCALE = "LOCL";
       } else {
         LOCALE = "INTL";
-      }
-
-      if (!configArr) {
-        return errorResMsg(res, 400, {
-          message: "No fee configurations found",
-        });
       }
 
       const applied = appliedFeeValue(configArr, Amount, {
