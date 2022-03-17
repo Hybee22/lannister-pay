@@ -22,7 +22,7 @@ if (process.env.LANNISTER_REDIS_PASSWORD !== "null") {
 
 if (process.env.NODE_ENV === "production") {
   clientConfig = {
-    url: process.env.LANNISTER_REDIS_LIVE_HOST,
+    url: `redis://${process.env.LANNISTER_REDIS_LIVE_HOST}`,
   };
 }
 
