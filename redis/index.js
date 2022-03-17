@@ -22,11 +22,7 @@ if (process.env.LANNISTER_REDIS_PASSWORD !== "null") {
 
 if (process.env.NODE_ENV === "production") {
   clientConfig = {
-    socket: {
-      host: process.env.LANNISTER_REDIS_LIVE_HOST,
-      port: process.env.LANNISTER_REDIS_LIVE_PORT,
-      password: process.env.LANNISTER_REDIS_PASSWORD,
-    },
+    url: `redis://${process.env.LANNISTER_REDIS_USER}:${process.env.LANNISTER_REDIS_PASSWORD}@${process.env.LANNISTER_REDIS_LIVE_HOST}:${process.env.LANNISTER_REDIS_LIVE_PORT}`,
   };
 }
 
