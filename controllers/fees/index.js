@@ -50,51 +50,63 @@ class FeesController {
 
       let configArr;
 
-      fs.readFile("fee-config.json", async (err, data) => {
-        if (err) {
-          configArr = await cache.get(keyId);
-        }
-        configArr = JSON.parse(data);
+      let path = "fee-config.json";
 
-        if (!configArr) {
-          return errorResMsg(res, 400, {
-            message: "No fee configurations found",
+      if (fs.existsSync(path)) {
+        return fs.readFile("fee-config.json", async (err, data) => {
+          if (err) {
+            configArr = await cache.get(keyId);
+            if (!configArr) {
+              return errorResMsg(res, 400, {
+                message: "No fee configurations found",
+              });
+            }
+          }
+          configArr = JSON.parse(data);
+
+          if (!configArr) {
+            return errorResMsg(res, 400, {
+              message: "No fee configurations found",
+            });
+          }
+
+          let LOCALE;
+          if (CurrencyCountry === Country) {
+            LOCALE = "LOCL";
+          } else {
+            LOCALE = "INTL";
+          }
+
+          const applied = appliedFeeValue(configArr, Amount, {
+            TYPE: Type,
+            BRAND: Brand,
+            LOCALE: LOCALE,
+            CURRENCY: Currency,
           });
-        }
 
-        let LOCALE;
-        if (CurrencyCountry === Country) {
-          LOCALE = "LOCL";
-        } else {
-          LOCALE = "INTL";
-        }
+          if (applied?.message?.length > 0) {
+            return errorResMsg(res, 400, { Error: applied?.message });
+          }
 
-        const applied = appliedFeeValue(configArr, Amount, {
-          TYPE: Type,
-          BRAND: Brand,
-          LOCALE: LOCALE,
-          CURRENCY: Currency,
+          let ChargeAmount;
+          if (BearsFee === true) {
+            ChargeAmount = Amount + applied?.appliedFee;
+          } else {
+            ChargeAmount = Amount;
+          }
+
+          const SettlementAmount = ChargeAmount - applied?.appliedFee;
+
+          return successResMsg(res, 200, {
+            AppliedFeeId: applied?.feeId,
+            AppliedFeeIdValue: Math.round(applied?.appliedFee),
+            ChargeAmount,
+            SettlementAmount,
+          });
         });
-
-        if (applied?.message?.length > 0) {
-          return errorResMsg(res, 400, { Error: applied?.message });
-        }
-
-        let ChargeAmount;
-        if (BearsFee === true) {
-          ChargeAmount = Amount + applied?.appliedFee;
-        } else {
-          ChargeAmount = Amount;
-        }
-
-        const SettlementAmount = ChargeAmount - applied?.appliedFee;
-
-        return successResMsg(res, 200, {
-          AppliedFeeId: applied?.feeId,
-          AppliedFeeIdValue: Math.round(applied?.appliedFee),
-          ChargeAmount,
-          SettlementAmount,
-        });
+      }
+      return errorResMsg(res, 400, {
+        message: "No fee configurations found",
       });
     } catch (error) {
       console.log(error);
