@@ -1,4 +1,4 @@
-import compare from "./compare.js";
+import compare from "./compare.js"; // Sorting
 import updateSpecificity from "./updateSpecificity.js";
 
 const parseFCS = (input, prop = null) => {
@@ -11,7 +11,7 @@ const parseFCS = (input, prop = null) => {
 
     const [id, currency, locale, entity] = main.split(" ");
     const [, type, value] = apply.split(" ");
-    const [entityType, entityProp] = entity.split("(");
+    const [entityType, entityProp] = entity.split("("); // CREDIT-CARD (VISA) => [CREDIT_CARD, VISA)]
     const entityProperty = prop || entityProp.slice(0, -1);
 
     let specificityCounter = updateSpecificity([

@@ -40,6 +40,20 @@ class FeesController {
       } = req.body;
       const { Type, Brand, Country } = PaymentEntity;
 
+      const acceptedTypes = [
+        "CREDIT-CARD",
+        "DEBIT-CARD",
+        "BANK-ACCOUNT",
+        "USSD",
+        "WALLET-ID",
+      ];
+
+      if (!acceptedTypes.includes(Type)) {
+        return errorResMsg(res, 400, {
+          message: `Payment entity type ${Type} is not supported`,
+        });
+      }
+
       const keyId = redisKeys.getHashKey(`config`);
 
       let configArr = await cache.get(keyId);
@@ -84,7 +98,6 @@ class FeesController {
         SettlementAmount,
       });
     } catch (error) {
-      console.log(error);
       logger.error(error);
       //   await cache.flushAll();
       return errorResMsg(res, 500, {
